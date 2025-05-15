@@ -5,6 +5,7 @@ import (
 	"golang-rest-api/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetUsers(c *gin.Context) {
@@ -21,9 +22,17 @@ func CreateNewUser(c *gin.Context) {
 	var user models.User
 	c.BindJSON(&user)
 
-	err := config.DB.Create(&user)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+
+	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(400, gin.H{"error": "Error creating users"})
+		return
 	}
 
 	c.JSON(200, &user)
