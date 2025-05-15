@@ -14,11 +14,12 @@ func init() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	config.ConnectDb()
 }
 
 func main() {
 	router := gin.New()
-	config.ConnectDb()
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{"message": "Server is live..."})
 	})
