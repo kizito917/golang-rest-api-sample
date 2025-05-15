@@ -8,16 +8,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUsers(c *gin.Context) {
-	users := []models.User{}
-	err := config.DB.Find(&users)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Unable to retrieve users"})
-	}
-
-	c.JSON(200, &users)
-}
-
 func CreateNewUser(c *gin.Context) {
 	var user models.User
 	c.BindJSON(&user)
@@ -35,17 +25,69 @@ func CreateNewUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, &user)
+	response := models.UserResponse{
+		Id:    user.Id,
+		Name:  user.Name,
+		Email: user.Email,
+	}
+
+	c.JSON(200, response)
+}
+
+func SignInUser(c *gin.Context) {
+	var loginPayload models.UserLoginPayload
+	c.BindJSON(&loginPayload)
+
+	// Check if user email exists
+	var dbUser models.User
+	if err := config.DB.Where("email = ?", loginPayload.Email).First(&dbUser).Error; err != nil {
+		c.JSON(401, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	// Compare password
+	err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(loginPayload.Password))
+	if err != nil {
+		c.JSON(401, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	response := models.UserResponse{
+		Id:    dbUser.Id,
+		Name:  dbUser.Name,
+		Email: dbUser.Email,
+	}
+
+	c.JSON(200, gin.H{
+		"message": "Login successful",
+		"user":    response,
+	})
+}
+
+func GetUsers(c *gin.Context) {
+	users := []models.User{}
+	err := config.DB.Find(&users)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to retrieve users"})
+	}
+
+	c.JSON(200, &users)
 }
 
 func GetUserDetails(c *gin.Context) {
 	var user models.User
-	err := config.DB.Where("id = ?", c.Param("id")).Find(&user)
-	if err != nil {
+	if err := config.DB.Where("id = ?", c.Param("id")).Find(&user).Error; err != nil {
 		c.JSON(404, gin.H{"error": "User details not found"})
+		return
 	}
 
-	c.JSON(200, &user)
+	response := models.UserResponse{
+		Id:    user.Id,
+		Name:  user.Name,
+		Email: user.Email,
+	}
+
+	c.JSON(200, response)
 }
 
 func UpdateUser(c *gin.Context) {
