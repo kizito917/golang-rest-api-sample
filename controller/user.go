@@ -1,12 +1,39 @@
 package controller
 
 import (
+	"fmt"
 	"golang-rest-api/config"
 	"golang-rest-api/models"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
+
+var jwtKey = os.Getenv("JWT_SECRET")
+var secretKey = []byte(jwtKey)
+
+func createToken(name string) (string, error) {
+	// Create a new JWT token with claims
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": name,                             // Subject (user identifier)
+		"iss": "golang-rest-api",                // Issuer
+		"aud": "user",                           // Audience (user role)
+		"exp": time.Now().Add(time.Hour).Unix(), // Expiration time
+		"iat": time.Now().Unix(),                // Issued at
+	})
+
+	// Print information about the created token
+	fmt.Printf("Token claims added: %+v\n", claims)
+	tokenString, err := claims.SignedString(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
 
 func CreateNewUser(c *gin.Context) {
 	var user models.User
@@ -52,10 +79,16 @@ func SignInUser(c *gin.Context) {
 		return
 	}
 
+	token, err := createToken((dbUser.Name))
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Unable to process login..."})
+	}
+
 	response := models.UserResponse{
 		Id:    dbUser.Id,
 		Name:  dbUser.Name,
 		Email: dbUser.Email,
+		Token: token,
 	}
 
 	c.JSON(200, gin.H{
