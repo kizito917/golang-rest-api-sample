@@ -14,10 +14,10 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-func createToken(name string) (string, error) {
+func createToken(userId int) (string, error) {
 	// Create a new JWT token with claims
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": name,                             // Subject (user identifier)
+		"sub": userId,                           // Subject (user identifier)
 		"iss": "golang-rest-api",                // Issuer
 		"aud": "user",                           // Audience (user role)
 		"exp": time.Now().Add(time.Hour).Unix(), // Expiration time
@@ -45,7 +45,6 @@ func CreateNewUser(c *gin.Context) {
 	}
 
 	user.Password = string(hashedPassword)
-
 	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(400, gin.H{"error": "Error creating users"})
 		return
@@ -78,7 +77,7 @@ func SignInUser(c *gin.Context) {
 		return
 	}
 
-	token, err := createToken((dbUser.Name))
+	token, err := createToken((dbUser.Id))
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Unable to process login..."})
 	}

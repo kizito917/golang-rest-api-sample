@@ -25,6 +25,7 @@ func main() {
 	})
 
 	routes.UserRoute(router)
+	routes.AppointmentRoutes(router)
 
 	router.Run()
 }

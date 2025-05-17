@@ -31,6 +31,27 @@ func verifyToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
+func GetUserIDFromClaims(c *gin.Context) (uint, error) {
+	claimsInterface, exists := c.Get("claims")
+	if !exists {
+		return 0, fmt.Errorf("no claims found in context")
+	}
+
+	claims, ok := claimsInterface.(jwt.MapClaims)
+	if !ok {
+		return 0, fmt.Errorf("invalid claims format")
+	}
+
+	fmt.Println("Claims", claims)
+	// Extract the user ID from claims - adjust the key based on your JWT structure
+	userIDFloat, ok := claims["sub"].(float64)
+	if !ok {
+		return 0, fmt.Errorf("user_id not found in claims or invalid format")
+	}
+
+	return uint(userIDFloat), nil
+}
+
 func CheckAuthorizationValidity(ctx *gin.Context) {
 	authHeader := ctx.GetHeader("Authorization")
 	if authHeader == "" {
