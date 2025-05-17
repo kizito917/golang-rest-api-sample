@@ -1,4 +1,4 @@
-package controller
+package controllers
 
 import (
 	"fmt"
@@ -98,8 +98,7 @@ func SignInUser(c *gin.Context) {
 
 func GetUsers(c *gin.Context) {
 	users := []models.User{}
-	err := config.DB.Find(&users)
-	if err != nil {
+	if err := config.DB.Find(&users).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Unable to retrieve users"})
 	}
 
