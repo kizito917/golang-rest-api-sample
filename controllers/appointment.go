@@ -66,6 +66,43 @@ func GetUserAppointments(c *gin.Context) {
 	c.JSON(200, appointments)
 }
 
-func GetAppointmentDetails() {
+func GetAppointmentDetails(c *gin.Context) {
+	var appointment models.Appointment
 
+	// Retrieve appointment details
+	if err := config.DB.Where("id = ?", c.Param("id")).Find(&appointment).Error; err != nil {
+		c.JSON(404, gin.H{
+			"error": "Appointment details not found, Invalid ID provided",
+			"Error": err,
+		})
+		return
+	}
+
+	c.JSON(200, appointment)
+}
+
+func UpdateAppointmentDetails(c *gin.Context) {
+	var existingAppointment models.Appointment
+	config.DB.Where("id = ?", c.Param("id")).First(&existingAppointment)
+
+	var input models.Appointment
+	if err := c.BindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	config.DB.Model(&existingAppointment).Updates(input)
+	c.JSON(200, existingAppointment)
+}
+
+func DeleteAppointment(c *gin.Context) {
+	var appointment models.Appointment
+	if err := config.DB.Where("id = ?", c.Param("id")).Delete(&appointment).Error; err != nil {
+		c.JSON(400, gin.H{"error": "Unable to delete appointment"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "Appointment deleted successfully",
+	})
 }
